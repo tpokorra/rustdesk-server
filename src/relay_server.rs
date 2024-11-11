@@ -46,7 +46,7 @@ const BLACKLIST_FILE: &str = "blacklist.txt";
 const BLOCKLIST_FILE: &str = "blocklist.txt";
 
 #[tokio::main(flavor = "multi_thread")]
-pub async fn start(port: &str, key: &str) -> ResultType<()> {
+pub async fn start(host: &str, port: &str, key: &str) -> ResultType<()> {
     let key = get_server_sk(key);
     if let Ok(mut file) = std::fs::File::open(BLACKLIST_FILE) {
         let mut contents = String::new();
@@ -85,7 +85,7 @@ pub async fn start(port: &str, key: &str) -> ResultType<()> {
     let main_task = async move {
         loop {
             log::info!("Start");
-            io_loop(listen_any(port, true).await?, listen_any(port2, true).await?, &key).await;
+            io_loop(listen_any(host, port, true).await?, listen_any(host, port2, true).await?, &key).await;
         }
     };
     let listen_signal = crate::common::listen_signal();

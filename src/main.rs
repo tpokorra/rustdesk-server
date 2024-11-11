@@ -15,6 +15,7 @@ fn main() -> ResultType<()> {
         .start()?;
     let args = format!(
         "-c --config=[FILE] +takes_value 'Sets a custom config file'
+        -h, --host=[IP] 'Sets the listening host ip address'
         -p, --port=[NUMBER(default={RENDEZVOUS_PORT})] 'Sets the listening port'
         -s, --serial=[NUMBER(default=0)] 'Sets configure update serial number'
         -R, --rendezvous-servers=[HOSTS] 'Sets rendezvous servers, separated by comma'
@@ -29,8 +30,9 @@ fn main() -> ResultType<()> {
     if port < 3 {
         bail!("Invalid port");
     }
+    let host = get_arg_or("host", "0.0.0.0".to_string());
     let rmem = get_arg("rmem").parse::<usize>().unwrap_or(RMEM);
     let serial: i32 = get_arg("serial").parse().unwrap_or(0);
-    RendezvousServer::start(port, serial, &get_arg_or("key", "-".to_owned()), rmem)?;
+    RendezvousServer::start(&host, port, serial, &get_arg_or("key", "-".to_owned()), rmem)?;
     Ok(())
 }

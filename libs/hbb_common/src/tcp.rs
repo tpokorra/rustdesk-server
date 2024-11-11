@@ -1,4 +1,4 @@
-use crate::{bail, bytes_codec::BytesCodec, ResultType};
+use crate::{bail, bytes_codec::BytesCodec, ResultType, is_ipv6_str};
 use anyhow::Context as AnyhowCtx;
 use bytes::{BufMut, Bytes, BytesMut};
 use futures::{SinkExt, StreamExt};
@@ -261,7 +261,7 @@ pub async fn new_listener<T: ToSocketAddrs>(addr: T, reuse: bool) -> ResultType<
     }
 }
 
-pub async fn listen_any(port: u16, reuse: bool) -> ResultType<TcpListener> {
+pub async fn listen_any(host: &str, port: u16, reuse: bool) -> ResultType<TcpListener> {
     if let Ok(mut socket) = TcpSocket::new_v6() {
         if reuse {
             // windows has no reuse_port, but its reuse_address
@@ -288,17 +288,22 @@ pub async fn listen_any(port: u16, reuse: bool) -> ResultType<TcpListener> {
             sock2.set_only_v6(false).ok();
             socket = unsafe { TcpSocket::from_raw_socket(sock2.into_raw_socket()) };
         }
-        if socket
-            .bind(SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port))
-            .is_ok()
+        if is_ipv6_str(host)
         {
-            if let Ok(l) = socket.listen(DEFAULT_BACKLOG) {
-                return Ok(l);
+            let addr: Ipv6Addr = host.parse().expect("parse failed");
+            if socket
+                .bind(SocketAddr::new(IpAddr::V6(addr), port))
+                .is_ok()
+            {
+                if let Ok(l) = socket.listen(DEFAULT_BACKLOG) {
+                    return Ok(l);
+                }
             }
         }
     }
     let s = TcpSocket::new_v4()?;
-    s.bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port))?;
+    let addr: Ipv4Addr = host.parse().expect("parse failed");
+    s.bind(SocketAddr::new(IpAddr::V4(addr), port))?;
     Ok(s.listen(DEFAULT_BACKLOG)?)
 }
 

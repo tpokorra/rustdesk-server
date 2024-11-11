@@ -5,6 +5,7 @@ use flexi_logger::*;
 use hbb_common::{config::RELAY_PORT, ResultType};
 use relay_server::*;
 mod version;
+use hbbs::{common::*};
 
 fn main() -> ResultType<()> {
     let _logger = Logger::try_with_env_or_str("info")?
@@ -35,7 +36,9 @@ fn main() -> ResultType<()> {
             port = v + 1;
         }
     }
+    let host = get_arg_or("host", "0.0.0.0".to_string());
     start(
+        &host,
         matches.value_of("port").unwrap_or(&port.to_string()),
         matches
             .value_of("key")
